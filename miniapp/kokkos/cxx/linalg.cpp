@@ -51,18 +51,6 @@ void CG_Solver::init(int nx, int ny)
 
 // computes the inner product of x and y
 // x and y are vectors on length N
-// double ss_dot(Field1d const& x, Field1d const& y)
-// {
-//     double result = 0;
-//     int N = x.dimension_0();
-    
-//     Kokkos::parallel_reduce( N, KOKKOS_LAMBDA( int i, double &tmp) {
-// 	tmp += x[i] * y[i];
-//       }, result);
-
-//     return result;
-// }
-
 double ss_dot(Field2d x, Field2d y)
 {
   double result = 0;
@@ -71,8 +59,9 @@ double ss_dot(Field2d x, Field2d y)
   int N  = Nx*Ny;
     
   Kokkos::parallel_reduce( N, KOKKOS_LAMBDA( const int index, double &tmp) {
-      const int i = index / Ny;
-      const int j = index - i*Ny;
+      int i,j;
+      index2coord(index, i, j, Nx, Ny);
+      
       tmp += x(i,j) * y(i,j);
     }, result);
 
@@ -103,8 +92,9 @@ double ss_norm2(Field2d x)
   double result = 0;
 
   Kokkos::parallel_reduce( N, KOKKOS_LAMBDA( const int index, double &tmp) {
-      const int i = index / Ny;
-      const int j = index - i*Ny;
+      int i,j;
+      index2coord(index, i, j, Nx, Ny);
+
       tmp += x(i,j) * x(i,j);
     }, result);
   
@@ -145,8 +135,9 @@ void ss_fill(Field2d x, double value)
   int N  = Nx*Ny;
   
   Kokkos::parallel_for( N, KOKKOS_LAMBDA(const int index) {
-      const int i = index / Ny;
-      const int j = index - i*Ny;
+      int i,j;
+      index2coord(index, i, j, Nx, Ny);
+      
       x(i,j) = value;
     });
 
@@ -169,8 +160,9 @@ void ss_axpy(Field2d y,
   int N  = Nx*Ny;
   
   Kokkos::parallel_for( N, KOKKOS_LAMBDA(const int index) {
-      const int i = index / Ny;
-      const int j = index - i*Ny;
+      int i,j;
+      index2coord(index, i, j, Nx, Ny);
+
       y(i,j) += alpha * x(i,j);
     });
 }
@@ -189,8 +181,9 @@ void ss_add_scaled_diff(Field2d y,
   int N  = Nx*Ny;
   
   Kokkos::parallel_for( N, KOKKOS_LAMBDA(const int index) {
-      const int i = index / Ny;
-      const int j = index - i*Ny;
+      int i,j;
+      index2coord(index, i, j, Nx, Ny);
+
       y(i,j) = x(i,j) + alpha * (l(i,j) - r(i,j));
     });
 }
@@ -209,8 +202,9 @@ void ss_scaled_diff(Field2d y,
   int N  = Nx*Ny;
   
   Kokkos::parallel_for( N, KOKKOS_LAMBDA(const int index) {
-      const int i = index / Ny;
-      const int j = index - i*Ny;
+      int i,j;
+      index2coord(index, i, j, Nx, Ny);
+
       y(i,j) = alpha * (l(i,j) - r(i,j));
     });
 }
@@ -227,8 +221,9 @@ void ss_scale(Field2d y,
   int N  = Nx*Ny;
   
   Kokkos::parallel_for( N, KOKKOS_LAMBDA(const int index) {
-      const int i = index / Ny;
-      const int j = index - i*Ny;
+      int i,j;
+      index2coord(index, i, j, Nx, Ny);
+
       y(i,j) = alpha * x(i,j);
     });
 }
@@ -247,8 +242,9 @@ void ss_lcomb(Field2d y,
   int N  = Nx*Ny;
   
   Kokkos::parallel_for( N, KOKKOS_LAMBDA(const int index) {
-      const int i = index / Ny;
-      const int j = index - i*Ny;
+      int i,j;
+      index2coord(index, i, j, Nx, Ny);
+
       y(i,j) = alpha * x(i,j) + beta * z(i,j);
     });
 }
@@ -258,15 +254,6 @@ void ss_lcomb(Field2d y,
 void ss_copy(Field2d y,
 	     Field2d x)
 {
-  // int Nx = x.dimension_0();
-  // int Ny = x.dimension_1();
-  // int N  = Nx*Ny;
-  
-  // Kokkos::parallel_for( N, KOKKOS_LAMBDA(int index) {
-  //     int i = index / Ny;
-  //     int j = index - i*Ny;
-  //     y(i,j) = x(i,j);
-  //   });
 
   Kokkos::deep_copy(y,x);
   

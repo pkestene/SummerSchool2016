@@ -35,8 +35,9 @@ void diffusion(Field2d U, Field2d S, const DataWarehouse &dw)
   //for (int j=1; j < jend; j++) {
   //for (int i=1; i < iend; i++) {
   Kokkos::parallel_for( nx*ny, KOKKOS_LAMBDA( int index ) {
-      int i = index / ny;
-      int j = index - i*ny;
+      int i,j;
+      index2coord(index, i, j, nx, ny);
+
       if (i>0    && j>0 &&
 	  i<iend && j<jend) {
 	S(i,j) = -(4. + alpha) * U(i,j)               // central point

@@ -1,8 +1,10 @@
 # KOKKOS backend setup (OpenMP or CUDA backend)
-# here we assume KOKKOS_PATH is setup by "module load kokkos"
+# here we assume env variable KOKKOS_PATH is setup either
+# by "module load kokkos"
+# or just manually.
 # Take care that by including Makefile.kokkos you will redefine
-# some variables like CXX, and provides Kokkos information about
-# target device KOKKOS_CPP_DEPENDS, KOKKOS_CXXFLAGS KOKKOS_CPPFLAGS, ...
+# some variables like CXX, but alos retrieve some Kokkos information about
+# target device, KOKKOS_CPP_DEPENDS, KOKKOS_CXXFLAGS KOKKOS_CPPFLAGS, ...
 ifndef KOKKOS_PATH
 $(error You must set env variable KOKKOS_PATH to the directory where is Makefile.kokkos)
 endif
@@ -12,14 +14,15 @@ EXE_PREFIX=main
 
 ifneq (,$(findstring Cuda,$(KOKKOS_DEVICES)))
 CXX = $(NVCC_WRAPPER)
-CXXFLAGS = -ccbin g++ -I. -O3 -Wall -DCUDA -fopenmp -lineinfo
+CXXFLAGS = -ccbin g++ -I. -O3 -Wall -DCUDA -fopenmp -lineinfo -DMEMORY_LAYOUT_LEFT
 LDFLAGS =
 EXE = $(EXE_PREFIX).cuda
 else
 CXX = g++
-CXXFLAGS = -g -O3 -I. -Wall --std=c++11
+CXXFLAGS = -g -O3 -I. -Wall --std=c++11 -DMEMORY_LAYOUT_RIGHT
 EXE = $(EXE_PREFIX).omp
 endif
+
 
 SOURCES = stats.cpp data.cpp operators.cpp linalg.cpp data_warehouse.cpp main.cpp
 HEADERS = stats.h   data.h   operators.h   linalg.h   data_warehouse.h   kokkos_shared.h
