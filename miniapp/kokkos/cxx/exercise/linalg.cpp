@@ -31,15 +31,9 @@ CG_Solver::~CG_Solver()
 // method for doing this)
 void CG_Solver::init(int nx, int ny)
 {
-  //int size = nx*ny;
-  
-  Ap    = Field2d("Ap"   ,nx,ny);
-  r     = Field2d("r"    ,nx,ny);
-  p     = Field2d("p"    ,nx,ny);
-  Fx    = Field2d("Fx"   ,nx,ny);
-  Fxold = Field2d("Fxold",nx,ny);
-  v     = Field2d("v"    ,nx,ny);
-  xold  = Field2d("xold" ,nx,ny);
+
+  // allocate memory for Ap, r, p, Fx, Fxold, v, xold
+  /* TODO */
   
   cg_initialized = true;
   
@@ -54,49 +48,28 @@ void CG_Solver::init(int nx, int ny)
 double ss_dot(Field2d x, Field2d y)
 {
   double result = 0;
-  int Nx = x.dimension_0();
-  int Ny = x.dimension_1();
-  int N  = Nx*Ny;
-    
-  Kokkos::parallel_reduce( N, KOKKOS_LAMBDA( const int index, double &tmp) {
-      int i,j;
-      index2coord(index, i, j, Nx, Ny);
-      
-      tmp += x(i,j) * y(i,j);
-    }, result);
+
+  /* TODO */
+  /*
+    for (int i = 0; i < N; i++)
+        result += x[i] * x[i];
+  */
 
   return result;
 }
 
 // computes the 2-norm of x
 // x is a vector on length N
-// double ss_norm2(Field1d x)
-// {
-
-//   int N = x.dimension_0();
-//   double result = 0;
-
-//   Kokkos::parallel_reduce( N, KOKKOS_LAMBDA( int i, double &tmp) {
-//       tmp += x[i] * x[i];
-//     }, result);
-  
-//   return sqrt(result);
-// }
-
 double ss_norm2(Field2d x)
 {
 
-  int Nx = x.dimension_0();
-  int Ny = x.dimension_1();
-  int N  = Nx*Ny;
   double result = 0;
 
-  Kokkos::parallel_reduce( N, KOKKOS_LAMBDA( const int index, double &tmp) {
-      int i,j;
-      index2coord(index, i, j, Nx, Ny);
-
-      tmp += x(i,j) * x(i,j);
-    }, result);
+  /* TODO */
+  /*
+  for (int i = 0; i < N; i++)
+        result += x[i] * x[i];
+  */
   
   return sqrt(result);
 }
@@ -107,11 +80,11 @@ double ss_norm2(Field2d x)
 void ss_fill(Field1d x, double value)
 {
 
-  int N = x.dimension_0();
-  
-  Kokkos::parallel_for( N, KOKKOS_LAMBDA(int index) {
-      x(index) = value;
-    });
+  /* TODO */
+  /*
+  for (int i = 0; i < N; i++)
+        x[i] = value;
+  */
   
 }
 
@@ -124,23 +97,14 @@ void ss_fill(Field2dHost x, double value)
   for (int i = 0; i < Nx; ++i)
     for (int j = 0; j < Ny; ++j)
       x(i,j) = value;
-   
+  
 }
 
 void ss_fill(Field2d x, double value)
 {
 
-  int Nx = x.dimension_0();
-  int Ny = x.dimension_1();
-  int N  = Nx*Ny;
+  /* TODO */
   
-  Kokkos::parallel_for( N, KOKKOS_LAMBDA(const int index) {
-      int i,j;
-      index2coord(index, i, j, Nx, Ny);
-      
-      x(i,j) = value;
-    });
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -154,17 +118,13 @@ void ss_axpy(Field2d y,
 	     double alpha,
 	     Field2d x)
 {
-  
-  int Nx = x.dimension_0();
-  int Ny = x.dimension_1();
-  int N  = Nx*Ny;
-  
-  Kokkos::parallel_for( N, KOKKOS_LAMBDA(const int index) {
-      int i,j;
-      index2coord(index, i, j, Nx, Ny);
 
-      y(i,j) += alpha * x(i,j);
-    });
+  /* TODO */
+  /*
+    for (int i = 0; i < N; i++)
+        y[i] += alpha * x[i];
+  */
+  
 }
 
 // computes y = x + alpha*(l-r)
@@ -176,16 +136,13 @@ void ss_add_scaled_diff(Field2d y,
 			Field2d l,
 			Field2d r)
 {
-  int Nx = x.dimension_0();
-  int Ny = x.dimension_1();
-  int N  = Nx*Ny;
-  
-  Kokkos::parallel_for( N, KOKKOS_LAMBDA(const int index) {
-      int i,j;
-      index2coord(index, i, j, Nx, Ny);
 
-      y(i,j) = x(i,j) + alpha * (l(i,j) - r(i,j));
-    });
+  /* TODO */
+  /*
+  for (int i = 0; i < N; i++)
+        y[i] = x[i] + alpha * (l[i] - r[i]);
+  */
+
 }
 
 // computes y = alpha*(l-r)
@@ -196,17 +153,12 @@ void ss_scaled_diff(Field2d y,
 		    Field2d l,
 		    Field2d r)
 {
-  
-  int Nx = y.dimension_0();
-  int Ny = y.dimension_1();
-  int N  = Nx*Ny;
-  
-  Kokkos::parallel_for( N, KOKKOS_LAMBDA(const int index) {
-      int i,j;
-      index2coord(index, i, j, Nx, Ny);
+  /* TODO */
+  /*
+  for (int i = 0; i < N; i++)
+    y[i] = alpha * (l[i] - r[i]);
+  */
 
-      y(i,j) = alpha * (l(i,j) - r(i,j));
-    });
 }
 
 // computes y := alpha*x
@@ -216,16 +168,13 @@ void ss_scale(Field2d y,
 	      double alpha,
 	      Field2d x)
 {
-  int Nx = x.dimension_0();
-  int Ny = x.dimension_1();
-  int N  = Nx*Ny;
-  
-  Kokkos::parallel_for( N, KOKKOS_LAMBDA(const int index) {
-      int i,j;
-      index2coord(index, i, j, Nx, Ny);
 
-      y(i,j) = alpha * x(i,j);
-    });
+  /* TODO */
+  /*
+    for (int i = 0; i < N; i++)
+        y[i] = alpha * x[i];
+  */
+
 }
 
 // computes linear combination of two vectors y := alpha*x + beta*z
@@ -237,16 +186,13 @@ void ss_lcomb(Field2d y,
 	      double beta,
 	      Field2d z)
 {
-  int Nx = x.dimension_0();
-  int Ny = x.dimension_1();
-  int N  = Nx*Ny;
-  
-  Kokkos::parallel_for( N, KOKKOS_LAMBDA(const int index) {
-      int i,j;
-      index2coord(index, i, j, Nx, Ny);
 
-      y(i,j) = alpha * x(i,j) + beta * z(i,j);
-    });
+  /* TODO */
+  /*
+  for (int i = 0; i < N; i++)
+    y[i] = alpha * x[i] + beta * z[i];
+  */
+
 }
 
 // copy one vector into another y := x
@@ -255,7 +201,7 @@ void ss_copy(Field2d y,
 	     Field2d x)
 {
 
-  Kokkos::deep_copy(y,x);
+  /* TODO : use kokkos deep_copy API*/
   
 }
 

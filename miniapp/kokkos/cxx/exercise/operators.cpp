@@ -32,52 +32,45 @@ void diffusion(Field2d U, Field2d S, const DataWarehouse &dw)
   int jend  = ny - 1;
     
   // the interior grid points
-  //for (int j=1; j < jend; j++) {
-  //for (int i=1; i < iend; i++) {
-  Kokkos::parallel_for( nx*ny, KOKKOS_LAMBDA( int index ) {
-      int i,j;
-      index2coord(index, i, j, nx, ny);
-
-      if (i>0    && j>0 &&
-	  i<iend && j<jend) {
-	S(i,j) = -(4. + alpha) * U(i,j)               // central point
-	  + U(i-1,j) + U(i+1,j) // east and west
-	  + U(i,j-1) + U(i,j+1) // north and south
-	  + alpha * x_old(i,j)
-	  + dxs * U(i,j) * (1.0 - U(i,j));
-      }
-    });
+  /* TODO */
+  /*
+    for (int j=1; j < jend; j++) {
+        for (int i=1; i < iend; i++) {
+            S(i,j) = -(4. + alpha) * U(i,j)               // central point
+                                    + U(i-1,j) + U(i+1,j) // east and west
+                                    + U(i,j-1) + U(i,j+1) // north and south
+                                    + alpha * x_old(i,j)
+                                    + dxs * U(i,j) * (1.0 - U(i,j));
+        }
+    }
+  */
     
   // the east boundary
-  {
-    int i = nx - 1;
-    //for (int j = 1; j < jend; j++)
-    Kokkos::parallel_for( ny-2, KOKKOS_LAMBDA( int index ) {
-	int j = index + 1;
-	{
-	  S(i,j) = -(4. + alpha) * U(i,j)
-	    + U(i-1,j) + U(i,j-1) + U(i,j+1)
-	    + alpha * x_old(i,j) + bndE[j]
-	    + dxs * U(i,j) * (1.0 - U(i,j));
-	}
-      });
-  }
+  /* TODO */
+  /*    {
+        int i = nx - 1;
+        for (int j = 1; j < jend; j++)
+        {
+            S(i,j) = -(4. + alpha) * U(i,j)
+                        + U(i-1,j) + U(i,j-1) + U(i,j+1)
+                        + alpha*x_old(i,j) + bndE[j]
+                        + dxs * U(i,j) * (1.0 - U(i,j));
+        }
+	} */
     
   // the west boundary
-  {
+  /* TODO */
+  /* {
     int i = 0;
-    //for (int j = 1; j < jend; j++)
-    Kokkos::parallel_for( ny-2, KOKKOS_LAMBDA( int index ) {
-	int j = index + 1;
-	{
-	  S(i,j) = -(4. + alpha) * U(i,j)
-	    + U(i+1,j) + U(i,j-1) + U(i,j+1)
-	    + alpha * x_old(i,j) + bndW[j]
-	    + dxs * U(i,j) * (1.0 - U(i,j));
-	}
-      });
-  }
-    
+    for (int j = 1; j < jend; j++)
+      {
+	S(i,j) = -(4. + alpha) * U(i,j)
+	  + U(i+1,j) + U(i,j-1) + U(i,j+1)
+	  + alpha * x_old(i,j) + bndW[j]
+	  + dxs * U(i,j) * (1.0 - U(i,j));
+      }
+      } */
+
   // the north boundary (plus NE and NW corners)
   {
     int j = ny - 1;
