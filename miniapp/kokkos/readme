@@ -16,3 +16,5 @@ OpenMP seems more efficient than in version 1.
 Cuda has the same performance as in version 1, and
 almost the same as the CUDA port in directory miniapp/cuda/src
 
+version 3: (cxx_v3)
+Same as version 1, but uses the new multi-dimensional range policy.
