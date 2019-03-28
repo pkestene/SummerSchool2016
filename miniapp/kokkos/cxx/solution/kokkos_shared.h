@@ -5,28 +5,16 @@
 #include <Kokkos_Parallel.hpp>
 #include <Kokkos_View.hpp>
 
-#ifdef CUDA
-# define DEVICE Kokkos::Cuda
-#include <cuda.h>
-#endif
-
-#ifdef OPENMP
-# define DEVICE Kokkos::OpenMP
-#endif
-
-// define a default device
-#ifndef DEVICE
-# define DEVICE Kokkos::OpenMP
-#endif
+using Device = Kokkos::DefaultExecutionSpace;
 
 // Alias name for 1d and 2d array (Kokkos view)
-typedef Kokkos::View<double*, DEVICE> Field1d;
+typedef Kokkos::View<double*, Device> Field1d;
 typedef Field1d::HostMirror           Field1dHost;
 
-typedef Kokkos::View<double**, DEVICE> Field2d;
+typedef Kokkos::View<double**, Device> Field2d;
 typedef Field2d::HostMirror            Field2dHost;
 
-//typedef Kokkos::View<double*, DEVICE> Field;
+//typedef Kokkos::View<double*, Device> Field;
 //typedef Field::HostMirror             FieldHost;
 
 // Memory layout typedef

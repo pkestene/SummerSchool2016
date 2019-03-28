@@ -35,47 +35,47 @@ using namespace stats;
 static void readcmdline(Discretization& options, int argc, char* argv[])
 {
   if (argc<5 || argc>6)
-    {
-      printf("Usage: main nx ny nt t verbose\n");
-      printf("  nx        number of gridpoints in x-direction\n");
-      printf("  ny        number of gridpoints in y-direction\n");
-      printf("  nt        number of timesteps\n");
-      printf("  t         total time\n");
-      printf("  verbose   (optional) verbose output\n");
-      exit(1);
-    }
+  {
+    printf("Usage: main nx ny nt t verbose\n");
+    printf("  nx        number of gridpoints in x-direction\n");
+    printf("  ny        number of gridpoints in y-direction\n");
+    printf("  nt        number of timesteps\n");
+    printf("  t         total time\n");
+    printf("  verbose   (optional) verbose output\n");
+    exit(1);
+  }
 
   // read nx
   options.nx = atoi(argv[1]);
   if (options.nx < 1)
-    {
-      fprintf(stderr, "nx must be positive integer\n");
-      exit(-1);
-    }
+  {
+    fprintf(stderr, "nx must be positive integer\n");
+    exit(-1);
+  }
 
   // read ny
   options.ny = atoi(argv[2]);
   if (options.ny < 1)
-    {
-      fprintf(stderr, "ny must be positive integer\n");
-      exit(-1);
-    }
+  {
+    fprintf(stderr, "ny must be positive integer\n");
+    exit(-1);
+  }
 
   // read nt
   options.nt = atoi(argv[3]);
   if (options.nt < 1)
-    {
-      fprintf(stderr, "nt must be positive integer\n");
-      exit(-1);
-    }
+  {
+    fprintf(stderr, "nt must be positive integer\n");
+    exit(-1);
+  }
 
   // read total time
   double t = atof(argv[4]);
   if (t < 0)
-    {
-      fprintf(stderr, "t must be positive real value\n");
-      exit(-1);
-    }
+  {
+    fprintf(stderr, "t must be positive real value\n");
+    exit(-1);
+  }
 
   // set verbosity if requested
   verbose_output = false;
@@ -102,16 +102,7 @@ static void readcmdline(Discretization& options, int argc, char* argv[])
 int main(int argc, char* argv[])
 {
 
-#ifdef CUDA
-  // Initialize Host mirror device
-  Kokkos::HostSpace::execution_space::initialize(1);
-  const unsigned device_count = Kokkos::Cuda::detect_device_count();
-
-  // Use the last device:
-  Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(device_count-1) );
-#else
   Kokkos::initialize(argc, argv);
-#endif
 
   // read command line arguments
   readcmdline(options, argc, argv);
@@ -139,11 +130,8 @@ int main(int argc, char* argv[])
 	  << std::endl ;
     }
     
-#if defined( CUDA )
-    Kokkos::Cuda::print_configuration( msg );
-#else
-    Kokkos::OpenMP::print_configuration( msg );  
-#endif
+    Kokkos::print_configuration( msg );
+    
     std::cout << msg.str() << std::endl;
   }
   std::cout << "mesh      :: " << options.nx << " * " << options.ny << " dx = " << options.dx << std::endl;
@@ -153,53 +141,54 @@ int main(int argc, char* argv[])
 	    << ", tolerance " << tolerance << std::endl;;
   std::cout << "========================================================================" << std::endl;
 
-  // Create DataWarehouse object
-  DataWarehouse dw(nx,ny);
+  {
+    // Create DataWarehouse object
+    DataWarehouse dw(nx,ny);
+    
+    Field2d      b("b",      nx,ny);
+    Field2d deltax("deltax", nx,ny);
+    
+    // set dirichlet boundary conditions to 0 all around
+    ss_fill(dw.bndN, 0.);
+    ss_fill(dw.bndS, 0.);
+    ss_fill(dw.bndE, 0.);
+    ss_fill(dw.bndW, 0.);
 
-  Field2d      b("b",      nx,ny);
-  Field2d deltax("deltax", nx,ny);
-
-  // set dirichlet boundary conditions to 0 all around
-  ss_fill(dw.bndN, 0.);
-  ss_fill(dw.bndS, 0.);
-  ss_fill(dw.bndE, 0.);
-  ss_fill(dw.bndW, 0.);
-
-  // set the initial condition
-  // a circle of concentration 0.1 centred at (xdim/4, ydim/4) with radius
-  // no larger than 1/8 of both xdim and ydim
-  Field2dHost x_tmp("x_tmp", nx,ny);
-  ss_fill(x_tmp, 0.);
-  double xc = 1.0 / 4.0;
-  double yc = (ny - 1) * options.dx / 4;
-  double radius = fmin(xc, yc) / 2.0;
-  for (int i = 0; i < nx; i++)
+    // set the initial condition
+    // a circle of concentration 0.1 centred at (xdim/4, ydim/4) with radius
+    // no larger than 1/8 of both xdim and ydim
+    Field2dHost x_tmp("x_tmp", nx,ny);
+    ss_fill(x_tmp, 0.);
+    double xc = 1.0 / 4.0;
+    double yc = (ny - 1) * options.dx / 4;
+    double radius = fmin(xc, yc) / 2.0;
+    for (int i = 0; i < nx; i++)
     {
       double x = (i - 1) * options.dx;
       for (int j = 0; j < ny; j++)
-	{
-	  double y = (j - 1) * options.dx;
-	  if ((x - xc) * (x - xc) + (y - yc) * (y - yc) < radius * radius)
-	    x_tmp(i,j) = 0.1;
-	}
+      {
+        double y = (j - 1) * options.dx;
+        if ((x - xc) * (x - xc) + (y - yc) * (y - yc) < radius * radius)
+          x_tmp(i,j) = 0.1;
+      }
     }
-  // "copy" x_tmp into x_new
-  // With OpenMP, no real copy happends here
-  // With Cuda, x_tmp is uploaded into x_new in GPU global memory
-  Kokkos::deep_copy(dw.x_new, x_tmp);
+    // "copy" x_tmp into x_new
+    // With OpenMP, no real copy happends here
+    // With Cuda, x_tmp is uploaded into x_new in GPU global memory
+    Kokkos::deep_copy(dw.x_new, x_tmp);
     
-  iters_cg = 0;
-  iters_newton = 0;
+    iters_cg = 0;
+    iters_newton = 0;
 
-  // create Conjuguate Gradient context object, and initialize it
-  CG_Solver cg_solver(dw);
-  cg_solver.init(nx,ny);
+    // create Conjuguate Gradient context object, and initialize it
+    CG_Solver cg_solver(dw);
+    cg_solver.init(nx,ny);
   
-  // start timer
-  double timespent = -omp_get_wtime();
+    // start timer
+    double timespent = -omp_get_wtime();
 
-  // main timeloop
-  for (int timestep = 1; timestep <= nt; timestep++)
+    // main timeloop
+    for (int timestep = 1; timestep <= nt; timestep++)
     {
       // set x_new and x_old to be the solution
       ss_copy(dw.x_old, dw.x_new);
@@ -208,28 +197,28 @@ int main(int argc, char* argv[])
       bool converged = false;
       int it;
       for (it=0; it<max_newton_iters; it++)
+      {
+        // compute residual : requires both x_new and x_old
+        diffusion(dw.x_new, b, dw);
+        residual = ss_norm2(b);
+
+        // check for convergence
+        if (residual < tolerance)
         {
-	  // compute residual : requires both x_new and x_old
-	  diffusion(dw.x_new, b, dw);
-	  residual = ss_norm2(b);
-
-	  // check for convergence
-	  if (residual < tolerance)
-            {
-	      converged = true;
-	      break;
-            }
-
-	  // solve linear system to get -deltax
-	  bool cg_converged = false;
-	  cg_solver.ss_cg(deltax, b, max_cg_iters, tolerance, cg_converged);
-
-	  // check that the CG solver converged
-	  if (!cg_converged) break;
-
-	  // update solution
-	  ss_axpy(dw.x_new, -1.0, deltax);
+          converged = true;
+          break;
         }
+
+        // solve linear system to get -deltax
+        bool cg_converged = false;
+        cg_solver.ss_cg(deltax, b, max_cg_iters, tolerance, cg_converged);
+
+        // check that the CG solver converged
+        if (!cg_converged) break;
+
+        // update solution
+        ss_axpy(dw.x_new, -1.0, deltax);
+      }
       iters_newton += it+1;
 	
       // output some statistics
@@ -246,56 +235,52 @@ int main(int argc, char* argv[])
       }
     }
     
-  // get times
-  timespent += omp_get_wtime();
+    // get times
+    timespent += omp_get_wtime();
     
-  ////////////////////////////////////////////////////////////////////
-  // write final solution to BOV file for visualization
-  ////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////
+    // write final solution to BOV file for visualization
+    ////////////////////////////////////////////////////////////////////
 
-  // binary data
-  {
-    Field2dHost x_new_host("x_new_host",nx,ny);
-    Kokkos::deep_copy(x_new_host, dw.x_new);
+    // binary data
+    {
+      Field2dHost x_new_host("x_new_host",nx,ny);
+      Kokkos::deep_copy(x_new_host, dw.x_new);
     
-    FILE* output = fopen("output.bin", "w");
+      FILE* output = fopen("output.bin", "w");
 
-    for (int i = 0; i < nx; ++i)
-      for (int j = 0; j < ny; ++j) {
-	double data = x_new_host(i,j);
-	fwrite(&data, sizeof(double), 1, output);
-      }
-    fclose(output);
-  }
+      for (int i = 0; i < nx; ++i)
+        for (int j = 0; j < ny; ++j) {
+          double data = x_new_host(i,j);
+          fwrite(&data, sizeof(double), 1, output);
+        }
+      fclose(output);
+    }
   
-  std::ofstream fid("output.bov");
-  fid << "TIME: 0.0" << std::endl;
-  fid << "DATA_FILE: output.bin" << std::endl;
-  fid << "DATA_SIZE: " << options.nx << ", " << options.ny << ", 1" << std::endl;;
-  fid << "DATA_FORMAT: DOUBLE" << std::endl;
-  fid << "VARIABLE: phi" << std::endl;
-  fid << "DATA_ENDIAN: LITTLE" << std::endl;
-  fid << "CENTERING: nodal" << std::endl;
-  fid << "BRICK_SIZE: 1.0 " << (options.ny-1)*options.dx << " 1.0" << std::endl;
+    std::ofstream fid("output.bov");
+    fid << "TIME: 0.0" << std::endl;
+    fid << "DATA_FILE: output.bin" << std::endl;
+    fid << "DATA_SIZE: " << options.nx << ", " << options.ny << ", 1" << std::endl;;
+    fid << "DATA_FORMAT: DOUBLE" << std::endl;
+    fid << "VARIABLE: phi" << std::endl;
+    fid << "DATA_ENDIAN: LITTLE" << std::endl;
+    fid << "CENTERING: nodal" << std::endl;
+    fid << "BRICK_SIZE: 1.0 " << (options.ny-1)*options.dx << " 1.0" << std::endl;
 
-  // print table sumarizing results
-  std::cout << "--------------------------------------------------------------------------------"
-	    << std::endl;
-  std::cout << "simulation took " << timespent << " seconds" << std::endl;
-  std::cout << int(iters_cg) << " conjugate gradient iterations, at rate of "
-	    << float(iters_cg)/timespent << " iters/second" << std::endl;
-  std::cout << iters_newton << " newton iterations" << std::endl;
-  std::cout << "--------------------------------------------------------------------------------"
-	    << std::endl;
+    // print table sumarizing results
+    std::cout << "--------------------------------------------------------------------------------"
+              << std::endl;
+    std::cout << "simulation took " << timespent << " seconds" << std::endl;
+    std::cout << int(iters_cg) << " conjugate gradient iterations, at rate of "
+              << float(iters_cg)/timespent << " iters/second" << std::endl;
+    std::cout << iters_newton << " newton iterations" << std::endl;
+    std::cout << "--------------------------------------------------------------------------------"
+              << std::endl;
 
-  std::cout << "Goodbye!" << std::endl;
+    std::cout << "Goodbye!" << std::endl;
 
-#ifdef CUDA
-  Kokkos::Cuda::finalize();
-  Kokkos::HostSpace::execution_space::finalize();
-#else
+  }
   Kokkos::finalize();
-#endif
   
   return 0;
 }
