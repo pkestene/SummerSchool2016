@@ -1,0 +1,5 @@
+KokkosCore_config.h
+KokkosCore_config.tmp
+fisher.openmp
+fisher.cuda
+

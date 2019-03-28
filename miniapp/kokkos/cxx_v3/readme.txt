@@ -9,9 +9,4 @@ Proposed activities:
   * linalg.cpp
   * operators.cpp
 
-
-- build with different kokkos modules
-  * kokkos/cuda8
-  * kokkos/openmp
-
-- measure performance for different problem sizes.
+- measure performance for different problem sizes, different backends( OpenMP / CUDA)

@@ -26,7 +26,7 @@ HEADERS = stats.h   data.h   operators.h   linalg.h   data_warehouse.h   kokkos_
 OBJ     = $(SOURCES:.cpp=.o)
 
 LINK = ${CXX}
-LINKFLAGS =  
+LINKFLAGS = -fopenmp
 
 DEPFLAGS = -M
 

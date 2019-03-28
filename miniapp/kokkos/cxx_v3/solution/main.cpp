@@ -35,47 +35,47 @@ using namespace stats;
 static void readcmdline(Discretization& options, int argc, char* argv[])
 {
   if (argc<5 || argc>6)
-    {
-      printf("Usage: main nx ny nt t verbose\n");
-      printf("  nx        number of gridpoints in x-direction\n");
-      printf("  ny        number of gridpoints in y-direction\n");
-      printf("  nt        number of timesteps\n");
-      printf("  t         total time\n");
-      printf("  verbose   (optional) verbose output\n");
-      exit(1);
-    }
+  {
+    printf("Usage: main nx ny nt t verbose\n");
+    printf("  nx        number of gridpoints in x-direction\n");
+    printf("  ny        number of gridpoints in y-direction\n");
+    printf("  nt        number of timesteps\n");
+    printf("  t         total time\n");
+    printf("  verbose   (optional) verbose output\n");
+    exit(1);
+  }
 
   // read nx
   options.nx = atoi(argv[1]);
   if (options.nx < 1)
-    {
-      fprintf(stderr, "nx must be positive integer\n");
-      exit(-1);
-    }
+  {
+    fprintf(stderr, "nx must be positive integer\n");
+    exit(-1);
+  }
 
   // read ny
   options.ny = atoi(argv[2]);
   if (options.ny < 1)
-    {
-      fprintf(stderr, "ny must be positive integer\n");
-      exit(-1);
-    }
+  {
+    fprintf(stderr, "ny must be positive integer\n");
+    exit(-1);
+  }
 
   // read nt
   options.nt = atoi(argv[3]);
   if (options.nt < 1)
-    {
-      fprintf(stderr, "nt must be positive integer\n");
-      exit(-1);
-    }
+  {
+    fprintf(stderr, "nt must be positive integer\n");
+    exit(-1);
+  }
 
   // read total time
   double t = atof(argv[4]);
   if (t < 0)
-    {
-      fprintf(stderr, "t must be positive real value\n");
-      exit(-1);
-    }
+  {
+    fprintf(stderr, "t must be positive real value\n");
+    exit(-1);
+  }
 
   // set verbosity if requested
   verbose_output = false;
@@ -102,16 +102,7 @@ static void readcmdline(Discretization& options, int argc, char* argv[])
 int main(int argc, char* argv[])
 {
 
-#ifdef CUDA
-  // Initialize Host mirror device
-  Kokkos::HostSpace::execution_space::initialize(1);
-  const unsigned device_count = Kokkos::Cuda::detect_device_count();
-
-  // Use the last device:
-  Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(device_count-1) );
-#else
   Kokkos::initialize(argc, argv);
-#endif
 
   // read command line arguments
   readcmdline(options, argc, argv);
@@ -139,11 +130,8 @@ int main(int argc, char* argv[])
 	  << std::endl ;
     }
     
-#if defined( CUDA )
-    Kokkos::Cuda::print_configuration( msg );
-#else
-    Kokkos::OpenMP::print_configuration( msg );  
-#endif
+    Kokkos::print_configuration( msg );
+    
     std::cout << msg.str() << std::endl;
   }
   std::cout << "mesh      :: " << options.nx << " * " << options.ny << " dx = " << options.dx << std::endl;
@@ -153,6 +141,7 @@ int main(int argc, char* argv[])
 	    << ", tolerance " << tolerance << std::endl;;
   std::cout << "========================================================================" << std::endl;
 
+  {
   // Create DataWarehouse object
   DataWarehouse dw(nx,ny);
 
@@ -290,12 +279,8 @@ int main(int argc, char* argv[])
 
   std::cout << "Goodbye!" << std::endl;
 
-#ifdef CUDA
-  Kokkos::Cuda::finalize();
-  Kokkos::HostSpace::execution_space::finalize();
-#else
+  }
   Kokkos::finalize();
-#endif
   
   return 0;
 }
